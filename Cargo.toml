@@ -1,0 +1,20 @@
+[package]
+name = "slab-allocator"
+version = "0.1.0"
+edition = "2021"
+authors = ["Noella IKIREZI"]
+
+[lib]
+crate-type = ["rlib"]
+
+[dependencies]
+# No external dependencies - only alloc crate allowed
+
+[dev-dependencies]
+# For testing with std
+
+[features]
+default = []
+
+# Pour la soumission no_std, activer cette feature:
+# no_std = []
