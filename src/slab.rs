@@ -211,3 +211,32 @@ impl SlabAllocator {
 
 /// Allocateur global statique
 pub static mut ALLOCATOR: SlabAllocator = SlabAllocator::new();
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_slab_alloc_dealloc() {
+        let mut slab = Slab::new(64);
+        slab.init();
+
+        let initial_free = slab.free_count();
+
+        // on alloue 2 blocs
+        let ptr1 = slab.alloc();
+        assert!(ptr1.is_some());
+        assert_eq!(slab.free_count(), initial_free - 1);
+
+        let ptr2 = slab.alloc();
+        assert!(ptr2.is_some());
+        assert_eq!(slab.free_count(), initial_free - 2);
+
+        // on libere les blocs
+        slab.dealloc(ptr1.unwrap());
+        assert_eq!(slab.free_count(), initial_free - 1);
+
+        slab.dealloc(ptr2.unwrap());
+        assert_eq!(slab.free_count(), initial_free);
+    }
+}
