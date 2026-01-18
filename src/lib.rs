@@ -8,4 +8,4 @@ extern crate alloc;
 
 pub mod slab;
 
-pub use slab::Slab;
+pub use slab::{Slab, SlabAllocator, ALLOCATOR};

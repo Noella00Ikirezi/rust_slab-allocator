@@ -101,3 +101,113 @@ impl Slab {
         self.free_count
     }
 }
+
+use core::alloc::Layout;
+
+/// Allocateur slab avec plusieurs tailles de blocs
+pub struct SlabAllocator {
+    slabs_64: Slab,    // pour blocs <= 64 octets
+    slabs_128: Slab,   // pour blocs <= 128 octets
+    slabs_256: Slab,   // pour blocs <= 256 octets
+    slabs_512: Slab,   // pour blocs <= 512 octets
+    slabs_1024: Slab,  // pour blocs <= 1024 octets
+    initialized: bool,
+}
+
+impl SlabAllocator {
+    /// Cree un nouvel allocateur slab
+    pub const fn new() -> Self {
+        SlabAllocator {
+            slabs_64: Slab::new(64),
+            slabs_128: Slab::new(128),
+            slabs_256: Slab::new(256),
+            slabs_512: Slab::new(512),
+            slabs_1024: Slab::new(1024),
+            initialized: false,
+        }
+    }
+
+    /// Initialise toutes les slabs
+    pub fn init(&mut self) {
+        if self.initialized == false {
+            self.slabs_64.init();
+            self.slabs_128.init();
+            self.slabs_256.init();
+            self.slabs_512.init();
+            self.slabs_1024.init();
+            self.initialized = true;
+        }
+    }
+
+    /// Trouve la slab appropriee pour une taille donnee
+    fn get_slab_for_size(&mut self, size: usize) -> Option<&mut Slab> {
+        if size <= 64 {
+            return Some(&mut self.slabs_64);
+        } else if size <= 128 {
+            return Some(&mut self.slabs_128);
+        } else if size <= 256 {
+            return Some(&mut self.slabs_256);
+        } else if size <= 512 {
+            return Some(&mut self.slabs_512);
+        } else if size <= 1024 {
+            return Some(&mut self.slabs_1024);
+        } else {
+            return None; // trop grand pour nos slabs
+        }
+    }
+
+    /// Trouve la slab qui contient un pointeur
+    fn find_slab_for_ptr(&mut self, ptr: *const u8) -> Option<&mut Slab> {
+        if self.slabs_64.contains(ptr) {
+            return Some(&mut self.slabs_64);
+        } else if self.slabs_128.contains(ptr) {
+            return Some(&mut self.slabs_128);
+        } else if self.slabs_256.contains(ptr) {
+            return Some(&mut self.slabs_256);
+        } else if self.slabs_512.contains(ptr) {
+            return Some(&mut self.slabs_512);
+        } else if self.slabs_1024.contains(ptr) {
+            return Some(&mut self.slabs_1024);
+        } else {
+            return None;
+        }
+    }
+
+    /// Alloue de la memoire
+    pub fn allocate(&mut self, layout: Layout) -> Option<NonNull<u8>> {
+        // init si pas encore fait
+        if self.initialized == false {
+            self.init();
+        }
+
+        // on prend le max entre size et align
+        let size = layout.size();
+        let align = layout.align();
+        let final_size;
+        if size > align {
+            final_size = size;
+        } else {
+            final_size = align;
+        }
+
+        // on cherche la bonne slab
+        let slab = self.get_slab_for_size(final_size);
+        if slab.is_none() {
+            return None;
+        }
+        return slab.unwrap().alloc();
+    }
+
+    /// Libere de la memoire
+    pub fn deallocate(&mut self, ptr: NonNull<u8>, _layout: Layout) {
+        // on trouve quelle slab contient ce pointeur
+        let slab = self.find_slab_for_ptr(ptr.as_ptr());
+        if slab.is_some() {
+            slab.unwrap().dealloc(ptr);
+        }
+        // sinon on fait rien (cest pas notre memoire)
+    }
+}
+
+/// Allocateur global statique
+pub static mut ALLOCATOR: SlabAllocator = SlabAllocator::new();
