@@ -1,13 +1,6 @@
-//! Slab Allocator Implementation
+//! Slab Allocator - Allocateur memoire a blocs fixes
 //!
-//! A no_std compatible slab allocator for the ESGI 4A exam.
-//!
-//! # Author
-//! Noella IKIREZI - ESGI 4A
-
-// Pour la soumission finale (no_std), decommenter:
-// #![no_std]
-// #![feature(alloc_error_handler)]
+//! Auteur: IKIREZI Noella
 
 #![allow(dead_code)]
 
@@ -15,4 +8,4 @@ extern crate alloc;
 
 pub mod slab;
 
-pub use slab::SlabAllocator;
+pub use slab::Slab;
