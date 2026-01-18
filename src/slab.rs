@@ -252,4 +252,29 @@ mod tests {
         let outside: u8 = 0;
         assert!(!slab.contains(&outside as *const u8));
     }
+
+    #[test]
+    fn test_allocator_different_sizes() {
+        let mut alloc = SlabAllocator::new();
+        alloc.init();
+
+        // on teste differentes tailles
+        let layout_32 = Layout::from_size_align(32, 8).unwrap();
+        let layout_100 = Layout::from_size_align(100, 8).unwrap();
+        let layout_300 = Layout::from_size_align(300, 8).unwrap();
+
+        let p1 = alloc.allocate(layout_32);
+        assert!(p1.is_some());
+
+        let p2 = alloc.allocate(layout_100);
+        assert!(p2.is_some());
+
+        let p3 = alloc.allocate(layout_300);
+        assert!(p3.is_some());
+
+        // on libere tout
+        alloc.deallocate(p1.unwrap(), layout_32);
+        alloc.deallocate(p2.unwrap(), layout_100);
+        alloc.deallocate(p3.unwrap(), layout_300);
+    }
 }
