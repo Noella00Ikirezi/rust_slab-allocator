@@ -239,4 +239,17 @@ mod tests {
         slab.dealloc(ptr2.unwrap());
         assert_eq!(slab.free_count(), initial_free);
     }
+
+    #[test]
+    fn test_slab_contains() {
+        let mut slab = Slab::new(64);
+        slab.init();
+
+        let ptr = slab.alloc().unwrap();
+        assert!(slab.contains(ptr.as_ptr()));
+
+        // un pointeur externe ne devrait pas etre dans la slab
+        let outside: u8 = 0;
+        assert!(!slab.contains(&outside as *const u8));
+    }
 }
